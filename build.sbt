@@ -38,7 +38,7 @@ lazy val compileSettings = Seq(
 lazy val publishSettings = Seq(
   publishMavenStyle := true,
   pomIncludeRepository := { _ => false },
-  pomExtra :=
+  pomExtra := {
     <developers>
       <developer>
         <id>alexarchambault</id>
@@ -46,6 +46,22 @@ lazy val publishSettings = Seq(
         <url>https://github.com/alexarchambault</url>
       </developer>
     </developers>
+  },
+  publishTo := {
+    val nexus = "https://oss.sonatype.org/"
+    if (isSnapshot.value)
+      Some("snapshots" at nexus + "content/repositories/snapshots")
+    else
+      Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+  },
+  credentials += {
+    Seq("SONATYPE_USER", "SONATYPE_PASS").map(sys.env.get) match {
+      case Seq(Some(user), Some(pass)) =>
+        Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", user, pass)
+      case _ =>
+        Credentials(Path.userHome / ".ivy2" / ".credentials")
+    }
+  }
 )
 
 lazy val noPublishSettings = Seq(
