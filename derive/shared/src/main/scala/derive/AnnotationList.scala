@@ -66,7 +66,14 @@ class AnnotationListMacros(val c: whitebox.Context) extends CaseClassMacros {
           .map { sym => sym.name.decodedName.toString -> sym }
           .toMap
 
-        fieldsOf(tpe).map { case (name, _) =>
+        val fields = fieldsOf(tpe)
+        // Looking at these unveils extra annotations below
+        // (what we call a "side effect")
+        fields.map { case (name, _) =>
+          tpe.member(name).annotations
+        }
+
+        fields.map { case (name, _) =>
           val paramConstrSym = constructorSyms(name.decodedName.toString)
 
           paramConstrSym.annotations.collect {
