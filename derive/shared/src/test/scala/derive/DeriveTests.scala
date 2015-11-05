@@ -481,8 +481,11 @@ class DeriveTests extends FlatSpec with Matchers {
     assert(TC[Int].repr == "int")
     assert(TC[String].repr == "string")
 
-    assert(TC[CC].repr == "<int,string,()>")
-    assert(TC[Base].repr == "<<int,()>+<()>+<string,()>+exception>")
+    // Not "()" on scala-js
+    val unitStr = ().toString
+
+    assert(TC[CC].repr == s"<int,string,$unitStr>")
+    assert(TC[Base].repr == s"<<int,$unitStr>+<$unitStr>+<string,$unitStr>+exception>")
   }
 
   it should "provide names" in {
