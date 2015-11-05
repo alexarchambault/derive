@@ -2,7 +2,7 @@
 
 *Utilities to derive type classes with shapeless*
 
-Various type classes to help deriving type classes
+Various quite experimental type classes to help deriving type classes
 with [shapeless](https://github.com/milessabin/shapeless).
 Used by [case-app](https://github.com/alexarchambault/case-app)
 and [argonaut-shapeless](https://github.com/alexarchambault/argonaut-shapeless) (or soon to be so).
