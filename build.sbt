@@ -28,8 +28,8 @@ lazy val compileSettings = Seq(
     "com.chuusai" %%% "shapeless" % "2.3.0-SNAPSHOT",
     "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
     "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
-    "org.scalatest" %% "scalatest" % "2.2.4" % "test",
-    "org.typelevel" %% "macro-compat" % "1.0.6",
+    "org.scalatest" %%% "scalatest" % "3.0.0-M11" % "test",
+    "org.typelevel" %%% "macro-compat" % "1.0.6",
     compilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion.full)
   ),
   testFrameworks += new TestFramework("utest.runner.Framework")
