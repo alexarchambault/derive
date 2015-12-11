@@ -5,16 +5,18 @@ import scala.reflect.macros.whitebox
 
 import shapeless._
 
-case class LowPriority[+H, +L](value: L) extends AnyVal
+trait LowPriority[T] extends Serializable
+
+trait LowPriorityMask[M, T] extends Serializable
 
 object LowPriority extends LazyExtensionCompanion {
-  def apply[H, L](implicit lkpPriority: Strict[LowPriority[H, L]]): LowPriority[H, L] =
-    lkpPriority.value
+  def apply[T](implicit nf: Strict[LowPriority[T]]): LowPriority[T] =
+    nf.value
 
 
   def id = "low-priority"
 
-  implicit def init[H, L]: LowPriority[H, L] = macro initImpl[LowPriority[H, L]]
+  implicit def init[T]: LowPriority[T] = macro initImpl[LowPriority[T]]
 
   def instantiate(ctx0: DerivationContext): LazyExtension { type Ctx = ctx0.type } =
     new LowPriorityLookupExtension {
@@ -31,22 +33,22 @@ trait LowPriorityTypes {
   import c.universe._
 
 
-  def lowPriorityTpe: Type = typeOf[LowPriority[_, _]].typeConstructor
+  def notFoundTpe: Type = typeOf[LowPriority[_]].typeConstructor
 
   object LowPriorityTpe {
-    def unapply(tpe: Type): Option[(Type, Type)] =
+    def unapply(tpe: Type): Option[Type] =
       tpe.dealias match {
-        case TypeRef(_, cpdTpe, List(highTpe, lowTpe))
-          if cpdTpe.asType.toType.typeConstructor =:= lowPriorityTpe =>
-          Some(highTpe, lowTpe)
+        case TypeRef(_, cpdTpe, List(highTpe))
+          if cpdTpe.asType.toType.typeConstructor =:= notFoundTpe =>
+          Some(highTpe)
         case _ =>
           None
       }
   }
 
-  def maskTpe: Type = typeOf[Mask[_, _]].typeConstructor
+  def maskTpe: Type = typeOf[LowPriorityMask[_, _]].typeConstructor
 
-  object MaskTpe {
+  object LowPriorityMaskTpe {
     def unapply(tpe: Type): Option[(Type, Type)] =
       tpe.dealias match {
         case TypeRef(_, cpdTpe, List(mTpe, tTpe))
@@ -79,15 +81,14 @@ trait LowPriorityLookupExtension extends LazyExtension with LowPriorityTypes {
 
   def initialState = ThisState(Nil)
 
-  def derivePriority(
+  def deriveLowPriority(
     state: State,
     extState: ThisState,
     update: (State, ThisState) => State )(
     priorityTpe: Type,
     highInstTpe: Type,
-    lowInstTpe: Type,
     mask: String
-  ): Option[(State, Instance)] = {
+  ): (State, Instance) = {
     val higherPriorityAvailable = {
       val extState1 = extState
         .addPriorityLookup(priorityTpe)
@@ -114,24 +115,20 @@ trait LowPriorityLookupExtension extends LazyExtension with LowPriorityTypes {
         }
     }
 
-    def low =
-      ctx.derive(state)(lowInstTpe)
-        .right.toOption
-        .map{case (state1, inst) =>
-          val highInstTpe0 =
-            if (mask.isEmpty)
-              highInstTpe
-            else
-              appliedType(maskTpe, List(internal.constantType(Constant(mask)), highInstTpe))
-          (state1, q"_root_.derive.LowPriority[$highInstTpe0, ${inst.actualTpe}](${inst.ident})", appliedType(lowPriorityTpe, List(highInstTpe0, inst.actualTpe)))
-        }
+    val highInstTpe0 =
+      if (mask.isEmpty)
+        highInstTpe
+      else
+        appliedType(maskTpe, List(internal.constantType(Constant(mask)), highInstTpe))
+
+    val low =
+      q"new _root_.derive.LowPriority[$highInstTpe0] {}"
+    val lowTpe0 = appliedType(notFoundTpe, List(highInstTpe0))
 
     if (higherPriorityAvailable)
-      c.abort(c.enclosingPosition, s"Higher priority $highInstTpe available")
+      c.abort(c.enclosingPosition, s"$highInstTpe available elsewhere")
     else
-      low.map {case (state1, extInst, actualTpe) =>
-        state1.closeInst(priorityTpe, extInst, actualTpe)
-      }
+      state.closeInst(priorityTpe, low, lowTpe0)
   }
 
   def derive(
@@ -141,15 +138,15 @@ trait LowPriorityLookupExtension extends LazyExtension with LowPriorityTypes {
     instTpe0: Type
   ): Option[Either[String, (State, Instance)]] =
     instTpe0 match {
-      case LowPriorityTpe(highTpe, lowTpe) =>
+      case LowPriorityTpe(highTpe) =>
         Some {
           if (extState.priorityLookups.contains(TypeWrapper(instTpe0)))
             Left(s"Not deriving $instTpe0")
           else
             state0.lookup(instTpe0).left.flatMap { state =>
-              val eitherHighTpeMask =
+              val eitherHighTpeLowPriorityMask =
                 highTpe match {
-                  case MaskTpe(mTpe, tTpe) =>
+                  case LowPriorityMaskTpe(mTpe, tTpe) =>
                     mTpe match {
                       case ConstantType(Constant(mask: String)) if mask.nonEmpty =>
                         Right((tTpe, mask))
@@ -160,9 +157,8 @@ trait LowPriorityLookupExtension extends LazyExtension with LowPriorityTypes {
                     Right((highTpe, ""))
                 }
 
-              eitherHighTpeMask.right.flatMap{case (highTpe, mask) =>
-                derivePriority(state, extState, update)(instTpe0, highTpe, lowTpe, mask)
-                  .toRight(s"Unable to derive $instTpe0")
+              eitherHighTpeLowPriorityMask.right.map{ case (highTpe, mask) =>
+                deriveLowPriority(state, extState, update)(instTpe0, highTpe, mask)
               }
             }
         }

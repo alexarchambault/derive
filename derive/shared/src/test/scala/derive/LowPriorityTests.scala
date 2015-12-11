@@ -3,7 +3,7 @@ package derive
 import org.scalatest.{ FlatSpec, Matchers }
 import shapeless.Strict
 
-object NotFoundTests {
+object LowPriorityTests {
 
   trait TC[T]
 
@@ -24,16 +24,16 @@ object NotFoundTests {
   trait Extra
 
   object Extra {
-    implicit def extraTC[T](implicit notFound: NotFound[TC[T]]): TC[T] =
+    implicit def extraTC[T](implicit notFound: LowPriority[TC[T]]): TC[T] =
       new TC[T] with Extra {}
   }
 
 }
 
-class NotFoundTests extends FlatSpec with Matchers {
-  import NotFoundTests._
+class LowPriorityTests extends FlatSpec with Matchers {
+  import LowPriorityTests._
 
-  "NotFound" should "not prevent extra type class" in {
+  "LowPriority" should "not prevent extra type class" in {
     import Extra._
 
     TC[Int] should not be a[Extra]
