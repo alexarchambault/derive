@@ -24,7 +24,7 @@ object NotFoundTests {
   trait Extra
 
   object Extra {
-    implicit def extraTC[T](implicit notFound: Strict[NotFound[TC[T]]]): TC[T] =
+    implicit def extraTC[T](implicit notFound: NotFound[TC[T]]): TC[T] =
       new TC[T] with Extra {}
   }
 

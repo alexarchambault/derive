@@ -15,7 +15,9 @@ object Derive extends LazyExtensionCompanion {
       def value = t
     }
 
-  implicit def init[T]: Derive[T] = macro initImpl
+  def id = "derive"
+
+  implicit def init[T]: Derive[T] = macro initImpl[Derive[T]]
 
   def instantiate(ctx0: DerivationContext): LazyExtension { type Ctx = ctx0.type } =
     new DeriveLazyExtension {
@@ -239,7 +241,7 @@ trait DeriveLazyExtension extends DeriveTypes with LazyExtension with CaseClassM
   case object ThisState
   type ThisState = ThisState.type
 
-  def id = "derive"
+  def id = Derive.id
 
   def initialState = ThisState
 

@@ -12,7 +12,9 @@ object LowPriority extends LazyExtensionCompanion {
     lkpPriority.value
 
 
-  implicit def init[H, L]: LowPriority[H, L] = macro initImpl
+  def id = "low-priority"
+
+  implicit def init[H, L]: LowPriority[H, L] = macro initImpl[LowPriority[H, L]]
 
   def instantiate(ctx0: DerivationContext): LazyExtension { type Ctx = ctx0.type } =
     new LowPriorityLookupExtension {
@@ -73,7 +75,7 @@ trait LowPriorityLookupExtension extends LazyExtension with LowPriorityTypes {
       copy(priorityLookups = priorityLookups.filter(_ != TypeWrapper(tpe)))
   }
 
-  def id = "low-priority"
+  def id = LowPriority.id
 
   def initialState = ThisState(Nil)
 

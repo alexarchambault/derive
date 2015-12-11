@@ -14,7 +14,9 @@ object NotFound extends LazyExtensionCompanion {
     nf.value
 
 
-  implicit def init[T]: NotFound[T] = macro initImpl
+  def id = "not-found"
+
+  implicit def init[T]: NotFound[T] = macro initImpl[NotFound[T]]
 
   def instantiate(ctx0: DerivationContext): LazyExtension { type Ctx = ctx0.type } =
     new NotFoundLookupExtension {
@@ -75,7 +77,7 @@ trait NotFoundLookupExtension extends LazyExtension with NotFoundTypes {
       copy(priorityLookups = priorityLookups.filter(_ != TypeWrapper(tpe)))
   }
 
-  def id = "not-found"
+  def id = NotFound.id
 
   def initialState = ThisState(Nil)
 

@@ -17,7 +17,7 @@ lazy val deriveJS = derive.js
 lazy val commonSettings = Seq(
   organization := "com.github.alexarchambault",
   name := "derive",
-  version := "0.1.0-SNAPSHOT",
+  version := "0.1.0-tmp-SNAPSHOT",
   resolvers += Resolver.sonatypeRepo("snapshots")
 )
 
@@ -25,7 +25,7 @@ lazy val compileSettings = Seq(
   scalaVersion := "2.11.7",
   crossScalaVersions := Seq("2.10.6", "2.11.7"),
   libraryDependencies ++= Seq(
-    "com.chuusai" %%% "shapeless" % "2.3.0-SNAPSHOT",
+    "com.github.alexarchambault" %%% "shapeless" % "2.3.0-SNAPSHOT",
     "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
     "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
     "org.scalatest" %%% "scalatest" % "3.0.0-M11" % "test",
